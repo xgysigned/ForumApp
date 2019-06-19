@@ -1,0 +1,125 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_MainLayout.cshtml";
+}
+<blockquote class="layui-elem-quote">用户管理</blockquote>
+<div class="layui-btn-group demoTable">
+    <button class="layui-btn" data-type="getCheckData">获取选中行数据</button>
+    <button class="layui-btn" data-type="getCheckLength">获取选中数目</button>
+    <button class="layui-btn" data-type="isAll">验证是否全选</button>
+    <button class="layui-btn" data-type="isAddUser">添加用户</button>
+</div>
+<table class="layui-hide" id="test" lay-filter="demo"></table>
+<script>
+    layui.use('table', function () {
+        var table = layui.table;
+
+        //第一个实例
+        table.render({
+            elem: '#test'
+            , height: 'full-150' //高度最大化减去差值
+            , url: '/Base/GetUserList' //数据接口
+            , page: true //开启分页
+            ,limit:10
+            , cols: [[ //表头
+                { field: 'id', type: 'checkbox', fixed: 'left' }
+                , { field: 'nickName', title: '用户名', width: 150 }
+                , { field: 'sex', title: '性别', width: 80, sort: true }
+                , { field: 'email', title: '邮箱', width: 150 }
+                , { field: 'phone', title: '联系方式', width: 177 }
+                , { field: 'createTime', title: '创建时间', width: 200, sort: true,templet : "<div>{{layui.util.toDateString(d.ordertime, 'yyyy年MM月dd日 HH:mm:ss')}}</div>" }
+                , { field: 'lastLoginTime', title: '最后一次登录时间', width: 200, sort: true, templet: "<div>{{layui.util.toDateString(d.ordertime, 'yyyy年MM月dd日 HH:mm:ss')}}</div>"}
+                , { field: 'role', title: '角色', width: 120 }
+                ,{ fixed: 'right', width: 178, align: 'center', toolbar: '#barDemo' }
+            ]]
+        });
+
+        //监听表格复选框选择
+        table.on('checkbox(demo)', function (obj) {
+            console.log(obj)
+        });
+        //监听工具条
+        table.on('tool(demo)', function (obj) {
+            var data = obj.data;
+            if (obj.event === 'detail') {
+                window.location.href = "/Base/Detail?id=" + data.id;
+                //layer.msg('ID：' + data.id + ' 的查看操作');
+            } else if (obj.event === 'del') {
+                layer.confirm('你确定要删除当前行吗？', function (index) {
+                    //obj.del();
+                    //layer.close(index);
+                    var loadIndex = layer.load(1, { shade: [0.2, '#000'] });
+                    $.ajax({
+                        //提交数据的类型 POST GET
+                        type: "POST",
+                        //提交的网址
+                        url: "/Base/DeleteUser",
+                        //提交的数据
+                        data: { id: data.id},
+                        //返回数据的格式
+                        dataType: "json",//"xml", "html", "script", "json", "jsonp", "text".
+                        //成功返回之后调用的函数
+                        success: function (result) {
+                            //var data = eval("(" + result + ")")
+                            if (result.Code == "1") {
+                                alert(result.Msg);
+                                window.location.href = "/Base/Index";
+                            } else {
+                                alert(result.Msg);
+                            }
+                            layer.close(loadIndex);
+                        },
+                        //调用出错执行的函数
+                        error: function () {
+                            //请求出错处理
+                            layer.close(loadIndex);
+                            alert("错了");
+
+                        }
+                    });
+                });
+            } else if (obj.event === 'edit') {
+                //layer.alert('编辑行：<br>' + JSON.stringify(data))
+                window.location.href = "/Base/AddUser?id=" + data.id;
+            }
+        });
+
+        var $ = layui.$, active = {
+            getCheckData: function () { //获取选中数据
+                var checkStatus = table.checkStatus('test')
+                    , data = checkStatus.data;
+                layer.alert(JSON.stringify(data));
+            }
+            , getCheckLength: function () { //获取选中数目
+                var checkStatus = table.checkStatus('test')
+                    , data = checkStatus.data;
+                layer.msg('选中了：' + data.length + ' 个');
+            }
+            , isAll: function () { //验证是否全选
+                var checkStatus = table.checkStatus('test');
+                layer.msg(checkStatus.isAll ? '全选' : '未全选')
+            }
+            , isAddUser: function () {
+                window.location.href = "/Base/AddUser";
+            }
+        };
+
+        $('.demoTable .layui-btn').on('click', function () {
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+
+    });
+
+    function DeleteUserById(id) {
+
+    }
+
+</script>
+<script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="detail">查看</a>
+    <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+
